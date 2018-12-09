@@ -1,0 +1,48 @@
+version: '3.1'
+
+services: # https://github.com/micahhausler/rabbitmq-compose
+  rabbitmq:
+    image: "rabbitmq:3-management"
+    environment:
+      RABBITMQ_ERLANG_COOKIE: "SWQOKODSQALRPCLNMEQG"
+      RABBITMQ_DEFAULT_USER: "rabbitmq"
+      RABBITMQ_DEFAULT_PASS: "rabbitmq"
+      RABBITMQ_DEFAULT_VHOST: "/"
+    ports:
+      - "15672:15672"
+      - "5672:5672"
+    volumes:
+      - "./cfg/enabled_plugins:/etc/rabbitmq/enabled_plugins"
+      #- "./rabbitmq.config:/etc/rabbitmq/rabbitmq.config:ro"
+      #- "./autocluster-0.4.1.ez:/usr/lib/rabbitmq/lib/rabbitmq_server-3.5.5/plugins/autocluster-0.4.1.ez"
+
+
+#  db:
+#    image: postgres
+#    restart: always
+#    environment:
+#      POSTGRES_PASSWORD: example
+#
+#  adminer:
+#    image: adminer
+#    restart: always
+#    ports:
+#    - 8080:8080
+
+
+#postgres:
+#  image: postgres:10.3
+#  environment:
+#    POSTGRES_USER: blog
+#    POSTGRES_PASSWORD: blog
+#    POSTGRES_DB: blog
+#  ports:
+#    - "3306"
+#
+#backend:
+#  build: .
+#  links:
+#    - postgres
+#  ports:
+#    - "8888:8888"
+#  command: --db_host=postgres
