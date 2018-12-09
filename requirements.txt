@@ -1,3 +1,5 @@
 pika
 tornado
 aio-pika
+sqlalchemy
+aiopg

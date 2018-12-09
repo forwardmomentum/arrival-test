@@ -17,17 +17,19 @@ services: # https://github.com/micahhausler/rabbitmq-compose
       #- "./autocluster-0.4.1.ez:/usr/lib/rabbitmq/lib/rabbitmq_server-3.5.5/plugins/autocluster-0.4.1.ez"
 
 
-#  db:
-#    image: postgres
-#    restart: always
-#    environment:
-#      POSTGRES_PASSWORD: example
-#
-#  adminer:
-#    image: adminer
-#    restart: always
-#    ports:
-#    - 8080:8080
+  db:
+    image: postgres
+    restart: always
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_DB: agency
+
+  adminer:
+    image: adminer
+    restart: always
+    ports:
+      - 8080:8080
 
 
 #postgres:

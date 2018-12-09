@@ -4,9 +4,13 @@ Agency server (tornado web service) provides REST and WS interfaces for chief,
  handles messages from chief and drivers (via RabbitMQ), works with PostgreSQL storage
 """
 import asyncio
-
+import sys
 import tornado
+from aiopg.sa import create_engine
 
+import sqlalchemy as sa
+
+from db_preparer import prepare_db
 from message_service import MessageService
 
 from tornado import websocket, web, ioloop
@@ -64,18 +68,34 @@ app = web.Application([
 ])
 
 
-def runserver():
+async def setup_db(drivers_count):
+    async with create_engine(user='postgres',
+                             database='agency',
+                             host='127.0.0.1',
+                             password='postgres') as engine:
+        async with engine.acquire() as conn:
+            await prepare_db(conn, drivers_count)
+        # async with engine.acquire() as conn:
+        #     await conn.execute(tbl.insert().values(val='abc'))
+        #
+        #     async for row in conn.execute(tbl.select()):
+        #         print(row.id, row.val)
+
+
+def runserver(drivers_count=None):
     tornado.ioloop.IOLoop.configure('tornado.platform.asyncio.AsyncIOLoop')
     io_loop = tornado.ioloop.IOLoop.current()
     asyncio.set_event_loop(io_loop.asyncio_loop)
-
     app.message_service = MessageService()
-
     io_loop.asyncio_loop.run_until_complete(app.message_service.connect())
-
+    if drivers_count:
+        io_loop.asyncio_loop.run_until_complete(setup_db(drivers_count))
     app.listen(9001)
     io_loop.start()
 
 
 if __name__ == '__main__':
-    runserver()
+    if sys.argv[1]:
+        runserver(int(sys.argv[1]))
+    else:
+        runserver()
