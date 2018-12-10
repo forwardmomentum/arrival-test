@@ -1,4 +1,21 @@
 .message-panel {
   text-align: end;
-  height: 200px;
+  overflow: auto;
+  height: 300px;
+}
+
+.message {
+  margin-top: 35px;
+}
+
+.message-time {
+  font-size: 12px;
+  font-style: italic;
+  margin-bottom: 6px;
+}
+
+.show-all {
+  position: relative;
+  left: 87%;
+  font-size: 14px;
 }

@@ -1,5 +1,5 @@
 .driver-info-container {
-  height: 70px;
+  height: 128px;
   text-align: end;
 }
 
@@ -19,9 +19,25 @@
 }
 
 .second-row {
+  display: inline-flex;
+  margin-top: 9px;
+  font-size: 14px;
+  font-style: italic;
+}
 
+.second-item {
+  margin-right: 20px;
 }
 
 .schedule-row {
 
+}
+
+.rest-time {
+  margin-left: 10px;
+}
+
+.schedule-subrow {
+  margin-top: 6px;
+  font-size: 13px;
 }

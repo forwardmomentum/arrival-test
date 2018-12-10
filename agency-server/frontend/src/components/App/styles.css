@@ -3,6 +3,7 @@
   /*margin: 0 auto;*/
   /*max-width: 989px;*/
   font-family: "Open Sans", Arial, sans-serif;
+  overflow: auto;
 }
 
 :global(*) {

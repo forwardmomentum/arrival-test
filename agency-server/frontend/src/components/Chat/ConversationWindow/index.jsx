@@ -17,7 +17,6 @@ class ConversationWindow extends React.Component {
     }
 
     render() {
-        console.log(this.props.drivers.find((driver) => driver.id === this.props.selectedDriverId));
         return (
 
             <div className={s["cw-container"]}>

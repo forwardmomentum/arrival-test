@@ -19,7 +19,6 @@ const store = createStore(
     ) => {
         switch (action.type) {
             case 'SET_DRIVERS': {
-                console.log("SETTING");
                 return {
                     ...state,
                     drivers: action.data.map((driver) => {
@@ -33,6 +32,16 @@ const store = createStore(
                     ...state,
                     selectedDriverId: action.data,
                 };
+            case 'SET_MESSAGES': {
+                let index = state.drivers.findIndex((driver) => action.data.driverId === driver.id);
+                let drivers = state.drivers;
+                drivers[index].messages = [...action.data.messages];
+                console.log(drivers[index].messages);
+                return {
+                    ...state,
+                    drivers: drivers
+                }
+            }
             default:
                 return state;
         }

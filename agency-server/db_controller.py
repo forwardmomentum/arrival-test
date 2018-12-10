@@ -43,11 +43,13 @@ def json_serial(obj):
 
 
 class MessageModel:
-    def __init__(self, body, from_id, to_id, message_id=None, received=False, sended_at=datetime.datetime.now()):
+    def __init__(self, body, from_id, to_id, message_id=None, received=False, sended_at=None):
         if not message_id:
             self.message_id = uuid.uuid4()
         else:
             self.message_id = message_id
+        if not sended_at:
+            sended_at = datetime.datetime.now()
         self.to_id = to_id
         self.from_id = from_id
         self.sended_at = sended_at
