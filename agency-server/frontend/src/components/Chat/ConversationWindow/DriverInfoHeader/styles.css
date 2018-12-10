@@ -1,0 +1,27 @@
+.driver-info-container {
+  height: 70px;
+  text-align: end;
+}
+
+.first-row {
+  display: -webkit-inline-box;
+}
+
+.name {
+  font-size: 24px;
+  font-weight: 400;
+}
+
+.status {
+  margin-right: 100px;
+  font-size: 14px;
+  color: #00000070;
+}
+
+.second-row {
+
+}
+
+.schedule-row {
+
+}

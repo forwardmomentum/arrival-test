@@ -1,0 +1,69 @@
+{
+  "parser": "babel-eslint",
+  "env": {
+    "browser": true,
+    "es6": true,
+    "jest": true,
+    "node": true
+  },
+  "extends": "eslint:recommended",
+  "parserOptions": {
+    "ecmaVersion": 2017,
+    "ecmaFeatures": {
+      "experimentalObjectRestSpread": true,
+      "jsx": true
+    },
+    "sourceType": "module"
+  },
+  "plugins": [
+    "react",
+    "babel"
+  ],
+  "rules": {
+    "indent": [
+      "error",
+      2,
+      {"SwitchCase": 1}
+    ],
+    "linebreak-style": [
+      "error",
+      "unix"
+    ],
+    "quotes": [
+      "error",
+      "single"
+    ],
+    "semi": [
+      "error",
+      "always"
+    ],
+    "no-useless-escape": "off",
+    "react/jsx-boolean-value": "error",
+    "react/jsx-closing-bracket-location": "error",
+    "react/jsx-closing-tag-location": "error",
+    "react/jsx-curly-spacing": "error",
+    "react/jsx-equals-spacing": "error",
+    "react/jsx-key": "error",
+    "react/jsx-no-comment-textnodes": "error",
+    "react/jsx-no-duplicate-props": "error",
+    "react/jsx-no-target-blank": "error",
+    "react/jsx-uses-react": "error",
+    "react/jsx-uses-vars": "error",
+    "comma-dangle": [1, "never"],
+    "object-curly-spacing": [2, "never"],
+    "no-multi-spaces": 2,
+    "no-trailing-spaces": 1,
+    "no-multiple-empty-lines": [2, {"max": 1}],
+    "no-console": ["error", { "allow": ["error", "warn", "log"] }]
+  },
+  "globals": {
+    "VERSION": true,
+    "GOOGLE_PLATFORM_RESOURCE": true,
+    "GOOGLE_API_KEY": true,
+    "REDMADROBOT_URL": true,
+    "ADMIN_URL": true,
+    "SENTRY_URL": true,
+    "API": true,
+    "DEV": true
+  }
+}

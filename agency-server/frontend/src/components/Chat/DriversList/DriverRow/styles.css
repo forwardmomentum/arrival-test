@@ -1,0 +1,25 @@
+.driver-row-container {
+  /*size: 20px;*/
+  text-align: right;
+  margin-bottom: 15px;
+  cursor: pointer;
+  padding-top: 10px;
+  padding-bottom: 10px;
+  padding-right: 8px;
+}
+
+.driver-name {
+  font-size: 17px;
+  font-weight: 400;
+}
+
+.last-message {
+  font-style: italic;
+  font-size: 13px;
+  margin-top: 7px;
+}
+
+.selected {
+  background-color: #769ad2e6;
+  color: rgb(255,255,255);
+}
