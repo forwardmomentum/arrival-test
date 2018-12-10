@@ -1,14 +1,15 @@
 from enum import Enum
 
-import datetime
 import json
 import random
 
 import aio_pika
 
+from db_controller import MessageModel, json_serial
+
 AGENCY_EXCHANGE_NAME = "agency"
 DRIVERS_EXCHANGE_NAME = "drivers"
-MESSAGE_INTENSITY = 0.05  # param to manage drivers random message frequency
+MESSAGE_INTENSITY = 0.05  # param to set drivers random message frequency
 
 
 class State(Enum):
@@ -18,37 +19,11 @@ class State(Enum):
     LAUNCH = 3
 
 
-class Message:
-
-    def __init__(self, type, message_body, from_id, message_id=None):
-        self.type = type
-        self.message_id = message_id
-        self.message_body = message_body
-        self.from_id = from_id
-
-    @staticmethod
-    def build_from_json(json_message):
-        message_dict = json.loads(json_message)
-        return Message(message_dict["type"], message_dict["message_body"], message_dict["from_id"],
-                       message_dict["message_id"])
-
-    def to_json(self):
-        return json.dumps({
-            'type': self.type,
-            'message_id': self.message_id,
-            'message_body': self.message_body,
-            'from_id': self.from_id
-        })
-
-    def __str__(self):
-        return self.to_json()
-
-
 class Driver:
 
-    def __init__(self, driver_data, connection):
-        self.driver_id = driver_data["driver_id"]
-        self.driver_data = driver_data
+    def __init__(self, driver_model, connection):
+        self.driver_id = driver_model.id
+        self.driver_model = driver_model
         self.connection = connection
         self.connected = False
         self.active = False
@@ -60,13 +35,12 @@ class Driver:
         self.input_exchange = None
         self.input_queue = None
         self.message_box = []
-        self.time = datetime.time(11, 30)  # fixme: only for testing purposes!
         self.input_queue_name = "driver_in_{}".format(self.driver_id)
 
     async def setup(self):
         self.input_channel = await self.connection.channel()
         self.input_exchange = await self.input_channel.declare_exchange(
-            DRIVERS_EXCHANGE_NAME)  # todo can be moved into scheduler?
+            DRIVERS_EXCHANGE_NAME)
         self.input_queue = await self.input_channel.declare_queue(self.input_queue_name)
         await self.input_queue.bind(exchange=DRIVERS_EXCHANGE_NAME)
         self.connected = True
@@ -91,7 +65,7 @@ class Driver:
             print("{}: I was deactivated".format(self.driver_id))
 
     async def on_message(self, queue_message):
-        agency_message = Message.build_from_json(queue_message.body)
+        agency_message = MessageModel.build_from_dict(json.loads(queue_message.body))
         print("I've got a message: {}".format(agency_message))
         queue_message.ack()
         if self.active:
@@ -101,122 +75,123 @@ class Driver:
             self.message_box.append(agency_message)
 
     async def handle_message(self, agency_message):
-        if agency_message.type == 'received':
-            return
+        # here can be place to handle recieved from chief
         await self.send_received(agency_message.message_id)
-        await self.send_message(Message(type='message', message_body=DriverMessages.got_it(), from_id=self.driver_id
-                                        ))
+        await self.send_message(
+            MessageModel(body=DriverMessages.got_it(), from_id=self.driver_id, to_id=agency_message.from_id))
 
     async def send_received(self, received_message_id):
         print("{}: I want to send received to message with id: {}".format(self.driver_id, received_message_id))
         await self.output_exchange.publish(
             routing_key="agency",
             message=aio_pika.message.Message(
-                Message(type='received', message_body=received_message_id,
-                        from_id=self.driver_id).to_json().encode('utf-8')))
+                json.dumps({'received_id': received_message_id}).encode('utf-8')))
 
-    async def send_message(self, message):
-        print("{}: I want to send message: {}".format(self.driver_id, message))
+    async def send_message(self, message_model):
+        print("{}: I want to send message: {}".format(self.driver_id, message_model.to_dict()))
         await self.output_exchange.publish(
             routing_key="agency",
-            message=aio_pika.message.Message(message.to_json().encode('utf-8')))
+            message=aio_pika.message.Message(json.dumps(message_model.to_dict(), default=json_serial).encode('utf-8')))
 
-    async def check(self):
-        self.time = (
-                datetime.datetime.combine(datetime.date(1, 1, 1), self.time) + datetime.timedelta(minutes=5)).time()
-        current_time = self.time
-        print("{}: Checking - and my time is {}, my state is {}".format(self.driver_id, current_time, self.state.name))
-        schedule = self.driver_data["schedule"]
-        # todo check week day
-        if schedule['working_day_start'] <= current_time < schedule['working_day_finish']:
-            if schedule['working_day_start'] <= current_time < schedule['first_rest_start']:
+    async def check(self, time):
+        current_time = time
+        # print("{}: Checking - and my time is {}, my state is {}".format(self.driver_id, current_time, self.state.name))
+        if self.driver_model.working_day_start <= current_time < self.driver_model.working_day_finish:
+            if self.driver_model.working_day_start <= current_time < self.driver_model.first_rest_start:
                 if self.state != State.WORKING:
                     await self.activate()
                     await self.send_message(
-                        Message(type='message', message_body=DriverMessages.hi(schedule['first_rest_start']),
-                                from_id=self.driver_id))
+                        MessageModel(from_id=self.driver_id, body=DriverMessages.hi(self.driver_model.first_rest_start),
+                                     to_id=1))
                     self.state = State.WORKING
 
-            if schedule['first_rest_start'] <= current_time < schedule['first_rest_stop']:
+            if self.driver_model.first_rest_start <= current_time < self.driver_model.first_rest_stop:
                 if self.state != State.REST:
                     await self.send_message(
-                        Message(type='message', message_body=DriverMessages.rest(schedule['first_rest_stop']),
-                                from_id=self.driver_id))
+                        MessageModel(from_id=self.driver_id,
+                                     body=DriverMessages.rest(self.driver_model.first_rest_stop),
+                                     to_id=1))
                     self.state = State.REST
                     await self.stop()
 
-            if schedule['first_rest_stop'] < current_time < schedule['launch_rest_start']:
+            if self.driver_model.first_rest_stop < current_time < self.driver_model.launch_rest_start:
                 if self.state != State.WORKING:
                     await self.activate()
                     await self.send_message(
-                        Message(type='message', message_body=DriverMessages.back_to_work(schedule['launch_rest_start']),
-                                from_id=self.driver_id))
+                        MessageModel(from_id=self.driver_id,
+                                     body=DriverMessages.back_to_work(self.driver_model.launch_rest_start),
+                                     to_id=1))
                     self.state = State.WORKING
 
-            if schedule['launch_rest_start'] <= current_time < schedule['launch_rest_stop']:
+            if self.driver_model.launch_rest_start <= current_time < self.driver_model.launch_rest_stop:
                 if self.state != State.LAUNCH:
                     await self.send_message(
-                        Message(type='message', message_body=DriverMessages.launch(schedule['launch_rest_stop']),
-                                from_id=self.driver_id))
+                        MessageModel(from_id=self.driver_id,
+                                     body=DriverMessages.launch(self.driver_model.launch_rest_stop),
+                                     to_id=1))
                     self.state = State.LAUNCH
                     await self.stop()
 
-            if schedule['launch_rest_stop'] < current_time < schedule['second_rest_start']:
+            if self.driver_model.launch_rest_stop < current_time < self.driver_model.second_rest_start:
                 if self.state != State.WORKING:
                     await self.activate()
                     await self.send_message(
-                        Message(type='message', message_body=DriverMessages.back_to_work(schedule['second_rest_start']),
-                                from_id=self.driver_id))
+                        MessageModel(from_id=self.driver_id,
+                                     body=DriverMessages.back_to_work(self.driver_model.second_rest_start),
+                                     to_id=1))
                     self.state = State.WORKING
 
-            if schedule['second_rest_start'] <= current_time < schedule['second_rest_stop']:
+            if self.driver_model.second_rest_start <= current_time < self.driver_model.second_rest_stop:
                 if self.state != State.REST:
                     await self.send_message(
-                        Message(type='message', message_body=DriverMessages.rest(schedule['second_rest_stop']),
-                                from_id=self.driver_id))
+                        MessageModel(from_id=self.driver_id,
+                                     body=DriverMessages.rest(self.driver_model.second_rest_stop),
+                                     to_id=1))
                     self.state = State.REST
                     await self.stop()
 
-            if schedule['second_rest_stop'] < current_time < schedule['third_rest_start']:
+            if self.driver_model.second_rest_stop < current_time < self.driver_model.third_rest_start:
                 if self.state != State.WORKING:
                     await self.activate()
                     await self.send_message(
-                        Message(type='message', message_body=DriverMessages.back_to_work(schedule['third_rest_start']),
-                                from_id=self.driver_id))
+                        MessageModel(from_id=self.driver_id,
+                                     body=DriverMessages.back_to_work(self.driver_model.third_rest_start),
+                                     to_id=1))
                     self.state = State.WORKING
 
-            if schedule['third_rest_start'] <= current_time < schedule['third_rest_stop']:
+            if self.driver_model.third_rest_start <= current_time < self.driver_model.third_rest_stop:
                 if self.state != State.REST:
                     await self.send_message(
-                        Message(type='message', message_body=DriverMessages.rest(schedule['third_rest_stop']),
-                                from_id=self.driver_id))
+                        MessageModel(from_id=self.driver_id,
+                                     body=DriverMessages.rest(self.driver_model.third_rest_stop),
+                                     to_id=1))
                     self.state = State.REST
                     await self.stop()
 
-            if schedule['third_rest_stop'] <= current_time < schedule['working_day_finish']:
+            if self.driver_model.third_rest_stop <= current_time < self.driver_model.working_day_finish:
                 if self.state != State.WORKING:
                     await self.activate()
                     await self.send_message(
-                        Message(type='message',
-                                message_body=DriverMessages.back_to_work(schedule['working_day_finish']),
-                                from_id=self.driver_id))
+                        MessageModel(from_id=self.driver_id,
+                                     body=DriverMessages.back_to_work(self.driver_model.working_day_finish),
+                                     to_id=1))
                     self.state = State.WORKING
 
         else:
             if self.state != State.OFF:
                 await self.send_message(
-                    Message(type='message',
-                            message_body=DriverMessages.stop(schedule['working_day_start']),
-                            from_id=self.driver_id))
+                    MessageModel(from_id=self.driver_id,
+                                 body=DriverMessages.stop(self.driver_model.working_day_start),
+                                 to_id=1))
                 self.state = State.OFF
                 await self.stop()
 
         if self.state == State.WORKING:
             if random.random() < MESSAGE_INTENSITY:
                 await self.send_message(
-                    Message(type='message',
-                            message_body=DriverMessages.simple_message(),
-                            from_id=self.driver_id))
+                    MessageModel(from_id=self.driver_id,
+                                 body=DriverMessages.simple_message(),
+                                 to_id=1))
 
 
 class DriverMessages:  # todo think about enum

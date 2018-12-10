@@ -112,7 +112,7 @@
         document.body.style.background = color;
     }
     function getRandMsg() {
-        return JSON.stringify({message_body: "Hi, lets do some work", driver_id: "111qqq"}) // Math.random().toString(36).substring(7);
+        return JSON.stringify({body: "Hi, lets do some work", to_id: 2}) // Math.random().toString(36).substring(7);
     }
     var params = window.location.hash.replace('#','').split('|');
     MSG_TARGET = 1 // parseInt(params[0])|| 1000;

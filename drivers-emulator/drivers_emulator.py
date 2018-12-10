@@ -3,84 +3,21 @@
 App to emulate behaviour of multiple drivers
 """
 import asyncio
-
-import pika
+import json
 import datetime
-import logging
 
 import tornado
 from aio_pika import connect_robust
-from pika import TornadoConnection
 from tornado import ioloop
+from tornado.httpclient import AsyncHTTPClient
 from tornado.ioloop import PeriodicCallback
 
+from db_controller import UserModel
 from driver import Driver
 
-# TODO read from agency service (one by one?)
-from message_service import RABBITMQ_USERNAME, RABBITMQ_PASSWORD
-
-all_drivers_data = [
-    {
-        "driver_id": "111qqq",
-        "name": "Jack Johnson Hopkins",
-        "email": "jack@gmail.com",
-        "birthday": datetime.date(1990, 3, 5),
-        "phone": "+79229223344",
-        "schedule": {
-            "working_day_start": datetime.time(8, 0),
-            "working_day_finish": datetime.time(20, 0),
-            "first_rest_start": datetime.time(10,0),
-            "first_rest_stop": datetime.time(10, 20),
-            "launch_rest_start": datetime.time(12, 0),
-            "launch_rest_stop": datetime.time(13, 0),
-            "second_rest_start": datetime.time(15, 0),
-            "second_rest_stop": datetime.time(15, 20),
-            "third_rest_start": datetime.time(18, 0),
-            "third_rest_stop": datetime.time(18, 20),
-            "working_week_days": [0, 1, 2, 3, 4]
-        }
-    },
-    {
-        "driver_id": "222www",
-        "name": "Homer Peter Griffin",
-        "email": "",
-        "birthday": datetime.date(1980, 3, 6),
-        "phone": "+79054443322",
-        "schedule": {
-            "working_day_start": datetime.time(7, 0),
-            "working_day_finish": datetime.time(19, 0),
-            "first_rest_start": datetime.time(9,0),
-            "first_rest_stop": datetime.time(9, 20),
-            "launch_rest_start": datetime.time(11, 30),
-            "launch_rest_stop": datetime.time(12, 30),
-            "second_rest_start": datetime.time(14, 0),
-            "second_rest_stop": datetime.time(14, 20),
-            "third_rest_start": datetime.time(17, 0),
-            "third_rest_stop": datetime.time(17, 20),
-            "working_week_days": [1, 2, 3, 4, 5]
-        }
-    },
-    {
-        "driver_id": "333eee",
-        "name": "Gene Peter Simmons",
-        "email": "gene@gmail.com",
-        "birthday": datetime.date(1985, 3, 8),
-        "phone": "+79054443325",
-        "schedule": {
-            "working_day_start": datetime.time(9, 0),
-            "working_day_finish": datetime.time(20, 0),
-            "first_rest_start": datetime.time(10,0),
-            "first_rest_stop": datetime.time(10, 20),
-            "launch_rest_start": datetime.time(12, 0),
-            "launch_rest_stop": datetime.time(13, 0),
-            "second_rest_start": datetime.time(15, 0),
-            "second_rest_stop": datetime.time(15, 20),
-            "third_rest_start": datetime.time(18, 0),
-            "third_rest_stop": datetime.time(18, 20),
-            "working_week_days": [2, 3, 4, 5, 6]
-        }
-    }
-]
+RABBITMQ_USERNAME = 'rabbitmq'
+RABBITMQ_PASSWORD = 'rabbitmq'
+DRIVERS_DATA_URL = "http://localhost:9001/api/drivers"
 
 
 class Scheduler(object):
@@ -93,27 +30,27 @@ class Scheduler(object):
         self.connected = False
         self.connection = None
         self.out_channels = None
+        self.all_drivers_data = []
+        self.time = datetime.time(11, 30)
 
     async def connect(self):
         self.connection = await connect_robust(login=RABBITMQ_USERNAME, password=RABBITMQ_PASSWORD)
         self.connected = True
-        # todo fetch drivers data
+        http_client = AsyncHTTPClient()
+        response = await http_client.fetch(DRIVERS_DATA_URL)
+        self.all_drivers_data = [UserModel.build_from_dict(user) for user in json.loads(response.body)]
+        print("Drivers data fetched from agency")
+        http_client.close()
         await self.init_drivers()
 
-    def on_connected(self, connection):
-        self.connected = True
-        self.connection = connection
-        # todo fetch drivers data
-        self.init_drivers()
-
     async def init_drivers(self):
-        for driver_data in all_drivers_data[:1]:
+        for driver_model in self.all_drivers_data:
             try:
-                if driver_data["driver_id"] not in self.drivers:
-                    self.drivers[driver_data["driver_id"]] = Driver(driver_data, self.connection)
-                    await self.drivers[driver_data["driver_id"]].setup()
+                if driver_model.id not in self.drivers:
+                    self.drivers[driver_model.id] = Driver(driver_model, self.connection)
+                    await self.drivers[driver_model.id].setup()
             except ValueError:
-                print("Can not create driver with data: {}".format(driver_data))
+                print("Can not create driver with model: {}".format(driver_model.to_dict()))
 
     async def check_drivers(self):
         """
@@ -121,8 +58,11 @@ class Scheduler(object):
         :return:
         """
         if self.connected:
+            self.time = (datetime.datetime.combine(datetime.date(1, 1, 1), self.time) + datetime.timedelta(
+                minutes=5)).time()
+            # self.time = datetime.datetime.now().time()
             for driver_id in self.drivers:
-                await self.drivers[driver_id].check()
+                await self.drivers[driver_id].check(self.time)
         else:
             print("Waiting for connection to check drivers")
 
@@ -135,4 +75,3 @@ if __name__ == '__main__':
     scheduled_task = PeriodicCallback(scheduler.check_drivers, 1000)
     scheduled_task.start()
     io_loop.start()
-

@@ -3,3 +3,4 @@ tornado
 aio-pika
 sqlalchemy
 aiopg
+python-dateutil

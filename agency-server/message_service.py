@@ -1,13 +1,14 @@
 # -*-  coding: utf-8 -*-
+import datetime
 import logging
 import pika
 import json
 
 from aio_pika import connect_robust
 import aio_pika
-from pika.adapters import TornadoConnection
 
-from driver import Message
+import db_controller
+from db_controller import MessageModel
 
 pika.log = logging.getLogger(__name__)
 
@@ -62,22 +63,36 @@ class MessageService(object):
 
     async def handle_message(self, raw_message):
         message_dict = json.loads(raw_message)
-        message_body, driver_id = message_dict["message_body"], message_dict["driver_id"]
-        routing_key = 'driver_in_{}'.format(driver_id)
-        # todo save message in db, take id of message
-        message_to_send = Message(type='message', message_body=message_body,
-                                  message_id='TODO GET ID FROM POSTGRES',
-                                  from_id='agency')
-        print("Sending message to {} : {}".format(driver_id, message_to_send))
-        await self.to_drivers_exchange.publish(
-            routing_key=routing_key,
-            message=aio_pika.message.Message(message_to_send.to_json().encode("utf-8")))
+        message_model = MessageModel(body=message_dict["body"], to_id=message_dict["to_id"], from_id=1,
+                                     sended_at=datetime.datetime.now())
+        routing_key = 'driver_in_{}'.format(message_model.to_id)
+        engine = await db_controller.get_engine()
+        async with engine.acquire() as conn:
+            await db_controller.add_message(conn, message_model)
+            print("Sending message to {} : {}".format(message_model.to_id, message_model.to_dict()))
+            await self.to_drivers_exchange.publish(
+                routing_key=routing_key,
+                message=aio_pika.message.Message(
+                    json.dumps(message_model.to_dict(), default=db_controller.json_serial).encode("utf-8")))
 
-    def on_message(self, queue_message):
-        message = Message.build_from_json(queue_message.body)
-        print("Got message from {}: {}".format(message.from_id, message))
-        # todo записать в базу если сообщение, изменить статус сообщения если recieved
+    async def on_message(self, queue_message):
+        message_dict = json.loads(queue_message.body)
+        engine = await db_controller.get_engine()
+        if 'received_id' in message_dict:
+            print("RECEIVED {}".format(message_dict))
+            async with engine.acquire() as conn:
+                await db_controller.message_received(conn, message_dict['received_id'])
+            if queue_message.routing_key in self.websockets:
+                self.websockets[queue_message.routing_key].write_message(json.dumps(message_dict))
+            queue_message.ack()
+            return
+        message_model = MessageModel.build_from_dict(message_dict)
+        message_model.received = True
+        print("Got message from {}: {}".format(message_model.from_id, message_model.to_dict()))
+        async with engine.acquire() as conn:
+            await db_controller.add_message(conn, message_model)
         if queue_message.routing_key in self.websockets:  # routing key can be used in multi chief model
             self.websockets[queue_message.routing_key].write_message(
-                message.to_json())  # проброс нотификаций по всему подряд
+                json.dumps(message_model.to_dict(),
+                           default=db_controller.json_serial))
         queue_message.ack()

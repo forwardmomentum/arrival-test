@@ -6,11 +6,10 @@ Agency server (tornado web service) provides REST and WS interfaces for chief,
 import asyncio
 import sys
 import tornado
-from aiopg.sa import create_engine
+import json
 
-import sqlalchemy as sa
-
-from db_preparer import prepare_db
+import db_controller
+from db_controller import prepare_db
 from message_service import MessageService
 
 from tornado import websocket, web, ioloop
@@ -49,47 +48,93 @@ class SocketHandler(websocket.WebSocketHandler):
 
 class Connect(web.RequestHandler):
 
-    @web.asynchronous
-    def get(self, *args):
+    async def get(self, *args):
         self.render('connector.html')
 
 
 class Index(web.RequestHandler):
 
-    @web.asynchronous
-    def get(self, *args):
+    async def get(self, *args):
         self.render('index.html')
+
+
+class HistoryHandler(web.RequestHandler):
+
+    async def get(self, driver_id):
+        """
+        Get json with whole messages between chief and driver with driver_id
+        """
+        engine = await db_controller.get_engine()
+        async with engine.acquire() as conn:
+            result = await db_controller.read_messages_history(conn, driver_id)
+            self.set_header('Content-Type', 'application/json')
+            self.write(json.dumps(result, default=db_controller.json_serial))
+
+
+class DriverHandler(web.RequestHandler):
+
+    async def get(self, driver_id):
+        """
+        Get json with drivers data and short message history
+        """
+        engine = await db_controller.get_engine()
+        async with engine.acquire() as conn:
+            result = await db_controller.read_driver_with_short_history(conn, driver_id)
+            self.set_header('Content-Type', 'application/json')
+            self.write(json.dumps(result, default=db_controller.json_serial))
+
+
+class AllDriversHandler(web.RequestHandler):
+
+    async def get(self):
+        """
+        Get json list with all drivers data
+        """
+        engine = await db_controller.get_engine()
+        async with engine.acquire() as conn:
+            result = await db_controller.read_all_drivers(conn)
+            self.set_header('Content-Type', 'application/json')
+            self.write(json.dumps(result, default=db_controller.json_serial))
+
+
+class MessageHandler(web.RequestHandler):
+
+    async def get(self):
+        """
+        Get last 100 messages
+        """
+        engine = await db_controller.get_engine()
+        async with engine.acquire() as conn:
+            result = await db_controller.read_last_messages(conn)
+            self.set_header('Content-Type', 'application/json')
+            self.write(json.dumps(result, default=db_controller.json_serial))
 
 
 app = web.Application([
     (r'/ws', SocketHandler),
     (r'/connect', Connect),
     (r'/', Index),
+    (r'/api/drivers/([^/]+)/history', HistoryHandler),
+    (r'/api/drivers/([^/]+)', DriverHandler),
+    (r'/api/drivers', AllDriversHandler),
+    (r'/api/messages', MessageHandler)
 ])
 
 
 async def setup_db(drivers_count):
-    async with create_engine(user='postgres',
-                             database='agency',
-                             host='127.0.0.1',
-                             password='postgres') as engine:
-        async with engine.acquire() as conn:
-            await prepare_db(conn, drivers_count)
-        # async with engine.acquire() as conn:
-        #     await conn.execute(tbl.insert().values(val='abc'))
-        #
-        #     async for row in conn.execute(tbl.select()):
-        #         print(row.id, row.val)
+    engine = await db_controller.get_engine()
+    async with engine.acquire() as conn:
+        await prepare_db(conn, drivers_count)
 
 
 def runserver(drivers_count=None):
     tornado.ioloop.IOLoop.configure('tornado.platform.asyncio.AsyncIOLoop')
     io_loop = tornado.ioloop.IOLoop.current()
     asyncio.set_event_loop(io_loop.asyncio_loop)
-    app.message_service = MessageService()
-    io_loop.asyncio_loop.run_until_complete(app.message_service.connect())
     if drivers_count:
         io_loop.asyncio_loop.run_until_complete(setup_db(drivers_count))
+    app.message_service = MessageService()
+    io_loop.asyncio_loop.run_until_complete(app.message_service.connect())
     app.listen(9001)
     io_loop.start()
 
