@@ -81,7 +81,7 @@ class MessageService(object):
                            default=json_serial))
 
     async def on_message(self, queue_message):
-        message_dict = json.loads(queue_message.body)
+        message_dict = json.loads(queue_message.body.decode('utf-8'))
         engine = await db_controller.get_engine()
         if 'received_id' in message_dict:
             print("RECEIVED {}".format(message_dict))

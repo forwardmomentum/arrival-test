@@ -65,7 +65,7 @@ class Driver:
             print("{}: I was deactivated".format(self.driver_id))
 
     async def on_message(self, queue_message):
-        agency_message = MessageModel.build_from_dict(json.loads(queue_message.body))
+        agency_message = MessageModel.build_from_dict(json.loads(queue_message.body.decode('utf-8')))
         print("I've got a message: {}".format(agency_message))
         queue_message.ack()
         if self.active:

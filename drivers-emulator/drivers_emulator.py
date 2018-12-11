@@ -38,7 +38,7 @@ class Scheduler(object):
         self.connected = True
         http_client = AsyncHTTPClient()
         response = await http_client.fetch(DRIVERS_DATA_URL)
-        self.all_drivers_data = [UserModel.build_from_dict(user) for user in json.loads(response.body)]
+        self.all_drivers_data = [UserModel.build_from_dict(user) for user in json.loads(response.body.decode('utf-8'))]
         print("Drivers data fetched from agency")
         http_client.close()
         await self.init_drivers()
