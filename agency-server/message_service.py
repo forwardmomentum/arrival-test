@@ -75,8 +75,8 @@ class MessageService(object):
                 routing_key=routing_key,
                 message=aio_pika.message.Message(
                     json.dumps(message_model.to_dict(), default=json_serial).encode("utf-8")))
-        if 'agency' in self.websockets:  # notify front that message was saved, todo fix hardcode of session
-            self.websockets['agency'].write_message(
+        for sess_id in self.websockets:
+            self.websockets[sess_id].write_message(
                 json.dumps(message_model.to_dict(),
                            default=json_serial))
 
@@ -84,11 +84,13 @@ class MessageService(object):
         message_dict = json.loads(queue_message.body.decode('utf-8'))
         engine = await db_controller.get_engine()
         if 'received_id' in message_dict:
-            print("RECEIVED {}".format(message_dict))
+            print("Received {}".format(message_dict))
             async with engine.acquire() as conn:
                 await db_controller.message_received(conn, message_dict['received_id'])
-            if queue_message.routing_key in self.websockets:
-                self.websockets[queue_message.routing_key].write_message(json.dumps(message_dict))
+            # if queue_message.routing_key in self.websockets:
+            #     self.websockets[queue_message.routing_key].write_message(json.dumps(message_dict))
+            for sess_id in self.websockets:
+                self.websockets[sess_id].write_message(json.dumps(message_dict))
             queue_message.ack()
             return
         message_model = MessageModel.build_from_dict(message_dict)
@@ -96,8 +98,12 @@ class MessageService(object):
         print("Got message from {}: {}".format(message_model.from_id, message_model.to_dict()))
         async with engine.acquire() as conn:
             await db_controller.add_message(conn, message_model)
-        if queue_message.routing_key in self.websockets:  # routing key can be used in multi chief model
-            self.websockets[queue_message.routing_key].write_message(
+        # if queue_message.routing_key in self.websockets:  # routing key can be used in multi chief model
+        #     self.websockets[queue_message.routing_key].write_message(
+        #         json.dumps(message_model.to_dict(),
+        #                    default=json_serial))
+        for sess_id in self.websockets:
+            self.websockets[sess_id].write_message(
                 json.dumps(message_model.to_dict(),
                            default=json_serial))
         queue_message.ack()

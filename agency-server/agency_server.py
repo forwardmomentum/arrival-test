@@ -5,6 +5,8 @@ Agency server (tornado web service) provides REST and WS interfaces for chief,
 """
 import asyncio
 import sys
+import uuid
+
 import tornado
 import json
 
@@ -28,7 +30,7 @@ class SocketHandler(websocket.WebSocketHandler):
         return self.sess_id
 
     def open(self):
-        self.sess_id = 'agency'  # for multi users case can be linked with username
+        self.sess_id = str(uuid.uuid4())  # for multi users case can be linked with username
         self.application.message_service.register_websocket(self._get_sess_id(), self)
 
     async def on_message(self, message):
