@@ -8,6 +8,7 @@ from aio_pika import connect_robust
 import aio_pika
 
 import db_controller
+from common.data_models import json_serial
 from db_controller import MessageModel
 
 pika.log = logging.getLogger(__name__)
@@ -73,11 +74,11 @@ class MessageService(object):
             await self.to_drivers_exchange.publish(
                 routing_key=routing_key,
                 message=aio_pika.message.Message(
-                    json.dumps(message_model.to_dict(), default=db_controller.json_serial).encode("utf-8")))
-        if 'agency' in self.websockets:  # notify front that message was saved, todo fix hardcode
+                    json.dumps(message_model.to_dict(), default=json_serial).encode("utf-8")))
+        if 'agency' in self.websockets:  # notify front that message was saved, todo fix hardcode of session
             self.websockets['agency'].write_message(
                 json.dumps(message_model.to_dict(),
-                           default=db_controller.json_serial))
+                           default=json_serial))
 
     async def on_message(self, queue_message):
         message_dict = json.loads(queue_message.body)
@@ -98,5 +99,5 @@ class MessageService(object):
         if queue_message.routing_key in self.websockets:  # routing key can be used in multi chief model
             self.websockets[queue_message.routing_key].write_message(
                 json.dumps(message_model.to_dict(),
-                           default=db_controller.json_serial))
+                           default=json_serial))
         queue_message.ack()
