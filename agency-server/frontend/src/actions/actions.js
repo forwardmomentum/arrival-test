@@ -8,7 +8,6 @@ export function getDriversData() {
                 if (res.status !== 200) {
                     return;
                 }
-
                 console.log('[DRIVERS DATA]', res);
 
                 dispatch({
@@ -21,10 +20,11 @@ export function getDriversData() {
             })
             .then(res => {
                 console.log("[LAST MESSAGES]", res); // can be used in future
+                // console.log('ws://' + window.location.hostname + ':9001/ws');
                 dispatch({
                     type: WEBSOCKET_CONNECT,
                     payload: {
-                        url: 'ws://localhost:9001/ws'
+                        url: 'ws://' + window.location.hostname + ':9001/ws'
                     }
                 })
             })
