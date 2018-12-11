@@ -17,6 +17,5 @@ Handles lifecycle of drivers (activates, deactivates them, sends messages). [Loo
 #### Run
 
 1. Run Rabbitmq and Postgres with ```docker-compose up ```
-2. Run ```python3.5 drivers_data_generator.py 
-3. Run ```python3.5 agency_server/agency_server.py <drivers_num>``` to generate data for <drivers_num> drivers (e. g. 20)
-4. In another terminal window run ```python3.5 drivers-emulator/drivers-emulator.py``` to run drivers emulator service
+2. Run ```python3.5 agency_server/agency_server.py <drivers_num>``` to generate data for <drivers_num> drivers (e. g. 20)
+3. In another terminal window run ```python3.5 drivers-emulator/drivers-emulator.py``` to run drivers emulator service
