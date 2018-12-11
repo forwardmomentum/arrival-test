@@ -22,7 +22,7 @@ class MessageInput extends React.Component {
     }
 
     handleSubmit() {
-        if(this.state.value)
+        if(this.state.value && this.state.value.trim().length > 0)
             this.props.sendMessage(this.state.value, this.props.selectedDriverId);
         this.setState({value: ''});
     }
