@@ -72,6 +72,6 @@ if __name__ == '__main__':
     asyncio.set_event_loop(io_loop.asyncio_loop)
     scheduler = Scheduler()
     io_loop.asyncio_loop.run_until_complete(scheduler.connect())
-    scheduled_task = PeriodicCallback(scheduler.check_drivers, 1000)
+    scheduled_task = PeriodicCallback(scheduler.check_drivers, 2000)
     scheduled_task.start()
     io_loop.start()
