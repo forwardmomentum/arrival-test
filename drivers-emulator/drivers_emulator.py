@@ -12,7 +12,7 @@ from tornado import ioloop
 from tornado.httpclient import AsyncHTTPClient
 from tornado.ioloop import PeriodicCallback
 
-from db_controller import UserModel
+from common.data_models import UserModel
 from driver import Driver
 
 RABBITMQ_USERNAME = 'rabbitmq'

@@ -20,7 +20,7 @@ export function getDriversData() {
                 return getLastMessages();
             })
             .then(res => {
-                console.log("[LAST MESSAGES]", res);
+                console.log("[LAST MESSAGES]", res); // can be used in future
                 dispatch({
                     type: WEBSOCKET_CONNECT,
                     payload: {

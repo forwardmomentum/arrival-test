@@ -5,11 +5,11 @@ import random
 
 import aio_pika
 
-from db_controller import MessageModel, json_serial
+from common.data_models import MessageModel, json_serial
 
 AGENCY_EXCHANGE_NAME = "agency"
 DRIVERS_EXCHANGE_NAME = "drivers"
-MESSAGE_INTENSITY = 0.1  # param to set drivers random message frequency
+MESSAGE_INTENSITY = 0.05  # param to set drivers random message frequency
 
 
 class State(Enum):
@@ -81,14 +81,14 @@ class Driver:
             MessageModel(body=DriverMessages.got_it(), from_id=self.driver_id, to_id=agency_message.from_id))
 
     async def send_received(self, received_message_id):
-        print("{}: I want to send received to message with id: {}".format(self.driver_id, received_message_id))
+        print("{}: sending received id: {}".format(self.driver_id, received_message_id))
         await self.output_exchange.publish(
             routing_key="agency",
             message=aio_pika.message.Message(
                 json.dumps({'received_id': received_message_id}).encode('utf-8')))
 
     async def send_message(self, message_model):
-        print("{}: I want to send message: {}".format(self.driver_id, message_model.to_dict()))
+        print("{}: sending message: {}".format(self.driver_id, message_model.to_dict()))
         await self.output_exchange.publish(
             routing_key="agency",
             message=aio_pika.message.Message(json.dumps(message_model.to_dict(), default=json_serial).encode('utf-8')))

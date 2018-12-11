@@ -9,19 +9,11 @@ import tornado
 import json
 
 import db_controller
+from common.data_models import json_serial
 from db_controller import prepare_db
 from message_service import MessageService
 
 from tornado import websocket, web, ioloop
-
-
-class IndexHandler(web.RequestHandler):
-
-    def data_received(self, chunk):
-        pass
-
-    def get(self):
-        self.render("index.html")
 
 
 class SocketHandler(websocket.WebSocketHandler):
@@ -54,8 +46,8 @@ class Connect(web.RequestHandler):
 
 class Index(web.RequestHandler):
 
-    async def get(self, *args):
-        self.render('index.html')
+    async def get(self):
+        self.render('gui_build/index.html')
 
 
 class HistoryHandler(web.RequestHandler):
@@ -68,7 +60,7 @@ class HistoryHandler(web.RequestHandler):
         async with engine.acquire() as conn:
             result = await db_controller.read_messages_history(conn, driver_id)
             self.set_header('Content-Type', 'application/json')
-            self.write(json.dumps(result, default=db_controller.json_serial))
+            self.write(json.dumps(result, default=json_serial))
 
 
 class DriverHandler(web.RequestHandler):
@@ -81,7 +73,7 @@ class DriverHandler(web.RequestHandler):
         async with engine.acquire() as conn:
             result = await db_controller.read_driver_with_short_history(conn, driver_id)
             self.set_header('Content-Type', 'application/json')
-            self.write(json.dumps(result, default=db_controller.json_serial))
+            self.write(json.dumps(result, default=json_serial))
 
 
 class AllDriversHandler(web.RequestHandler):
@@ -94,7 +86,7 @@ class AllDriversHandler(web.RequestHandler):
         async with engine.acquire() as conn:
             result = await db_controller.read_all_drivers(conn)
             self.set_header('Content-Type', 'application/json')
-            self.write(json.dumps(result, default=db_controller.json_serial))
+            self.write(json.dumps(result, default=json_serial))
 
 
 class MessageHandler(web.RequestHandler):
@@ -107,13 +99,14 @@ class MessageHandler(web.RequestHandler):
         async with engine.acquire() as conn:
             result = await db_controller.read_last_messages(conn)
             self.set_header('Content-Type', 'application/json')
-            self.write(json.dumps(result, default=db_controller.json_serial))
+            self.write(json.dumps(result, default=json_serial))
 
 
 app = web.Application([
     (r'/ws', SocketHandler),
     (r'/connect', Connect),
     (r'/', Index),
+    (r'/([^/]+)', tornado.web.StaticFileHandler, {'path': 'agency-server/gui_build'}),
     (r'/api/drivers/([^/]+)/history', HistoryHandler),
     (r'/api/drivers/([^/]+)', DriverHandler),
     (r'/api/drivers', AllDriversHandler),

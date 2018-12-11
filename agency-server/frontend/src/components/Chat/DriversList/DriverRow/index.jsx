@@ -3,7 +3,6 @@ import PropTypes from 'prop-types';
 import { connect } from 'react-redux';
 import s from './styles.css';
 import {stopBlinking} from "../../../../actions/actions";
-// import {getDriversData} from "../../../actions/actions";
 
 class DriverRow extends React.Component {
     static propTypes = {
@@ -27,10 +26,6 @@ class DriverRow extends React.Component {
     get blinking () {
         return this.props.drivers.find((driver) => this.props.driverId === driver.id).blinking;
     }
-
-    // this.timer = setInterval(() => this.setState({
-    //     time: Date.now() - this.state.start
-    // }), 1);
 
     componentWillReceiveProps(willProps) {
         let willBlinkedValue = willProps.drivers.find((driver) => this.props.driverId === driver.id).blinking;

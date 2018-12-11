@@ -3,8 +3,8 @@ import PropTypes from 'prop-types';
 import { connect } from 'react-redux';
 import s from './styles.css';
 import {getDriversData} from "../../actions/actions";
-import DriversList from "components/Chat/DriversList";
-import ConversationWindow from "components/Chat/ConversationWindow";
+import DriversList from './DriversList';
+import ConversationWindow from './ConversationWindow'
 
 class Chat extends React.Component {
     static propTypes = {
@@ -13,8 +13,6 @@ class Chat extends React.Component {
 
     constructor(props) {
         super(props);
-
-        // this.clicked = this.clicked.bind(this);
     }
 
     handleLoginChange(value) {

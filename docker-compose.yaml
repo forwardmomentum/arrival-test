@@ -24,27 +24,3 @@ services: # https://github.com/micahhausler/rabbitmq-compose
       - "5432:5432"
     environment:
       POSTGRES_DB: agency
-
-#  adminer:
-#    image: adminer
-#    restart: always
-#    ports:
-#      - 8080:8080
-
-
-#postgres:
-#  image: postgres:10.3
-#  environment:
-#    POSTGRES_USER: blog
-#    POSTGRES_PASSWORD: blog
-#    POSTGRES_DB: blog
-#  ports:
-#    - "3306"
-#
-#backend:
-#  build: .
-#  links:
-#    - postgres
-#  ports:
-#    - "8888:8888"
-#  command: --db_host=postgres
