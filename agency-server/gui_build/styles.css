@@ -20,6 +20,8 @@ input, textarea {
   display: flex;
   flex-direction: column;
   min-height: 100vh;
+  justify-content: center;
+  align-items: center;
 }
 
 .content___3llKI {
@@ -30,8 +32,9 @@ input, textarea {
 .chat-container___bQZfM {
   width: 40%;
   margin-left: 25%;
-  margin-top: 100px;
+  /*margin-top: 40px;*/
   display: flex;
+
 }
 .drivers-list-container___1UjDu {
   width: 25%;
