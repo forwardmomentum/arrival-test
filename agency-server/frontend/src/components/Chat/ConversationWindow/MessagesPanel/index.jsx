@@ -11,7 +11,6 @@ class MessagePanel extends React.Component {
 
     constructor(props) {
         super(props);
-        this.currentSelectedDriverId = null;
         this.showAllClicked = this.showAllClicked.bind(this);
     }
 
@@ -34,17 +33,34 @@ class MessagePanel extends React.Component {
         this.props.loadAllHistory(this.props.selectedDriverId);
     }
 
+    get messages() {
+        return this.props.drivers.find((driver) => this.props.selectedDriverId === driver.id).messages;
+    }
+
+    get driverName() {
+        return this.props.drivers.find((driver) => this.props.selectedDriverId === driver.id).name;
+    }
+
     render() {
+        let driverName = this.driverName;
         return (
             <div className={s["message-panel-wrapper"]}>
                 <button onClick={this.showAllClicked} className={s['show-all']}>Show all</button>
                 <div className={s["message-panel"]} id={"message-panel"}>
                     {
-                        this.props.messages.map(function (message, i) {
-                            return <div className={s["message"]} key={message.message_id}>
-                                <div className={s["message-time"]}>{new Date(message.sended_at).toLocaleTimeString()}</div>
+                        this.messages.map(function (message, i) {
+                            return <div className={s["message"] + " " + (message.from_id === 1 ? s["message-out"] : '')}
+                                        key={message.message_id}>
+                                <div
+                                    className={s["message-time"]}>{message.to_id === 1 ? driverName : 'you'} {new Date(message.sended_at).toLocaleTimeString()}
+                                    {
+                                        !!message.received && (<i className={s.icon + " fas fa-check"}></i>)
+                                    }
+                                    {
+                                        !message.received && (<i className={s.icon + " far fa-clock"}></i>)
+                                    }
+                                    </div>
                                 <div className={s["message-body"]}>{message.body}</div>
-
                             </div>
                         })
                     }
@@ -56,7 +72,7 @@ class MessagePanel extends React.Component {
 
 const mapStateToProps = (state) => {
     return {
-        messages: state.drivers.find((driver) => state.selectedDriverId === driver.id).messages,
+        drivers: state.drivers,
         selectedDriverId: state.selectedDriverId
     };
 };

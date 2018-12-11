@@ -2,7 +2,7 @@ import React from 'react';
 import PropTypes from 'prop-types';
 import { connect } from 'react-redux';
 import s from './styles.css';
-// import {getDriversData} from "../../../actions/actions";
+import {sendMessage} from "../../../../actions/actions";
 
 class MessageInput extends React.Component {
     static propTypes = {
@@ -13,6 +13,7 @@ class MessageInput extends React.Component {
         super(props);
         this.handleChange = this.handleChange.bind(this);
         this.handleSubmit = this.handleSubmit.bind(this);
+        this.handleKeyPressed = this.handleKeyPressed.bind(this);
         this.state = {value: ''};
     }
 
@@ -20,16 +21,22 @@ class MessageInput extends React.Component {
         this.setState({value: event.target.value});
     }
 
-    handleSubmit(event) {
+    handleSubmit() {
         if(this.state.value)
-            console.log("TODO SEND MESSAGE")
+            this.props.sendMessage(this.state.value, this.props.selectedDriverId);
+        this.setState({value: ''});
+    }
+
+    handleKeyPressed(context) {
+        if (context.key === 'Enter') {
+            this.handleSubmit();
+        }
     }
 
     render() {
-
         return (
             <div className={s["input-container"]}>
-                <textarea className={s["input-msg"]} value={this.state.value} onChange={this.handleChange}/>
+                <textarea className={s["input-msg"]} value={this.state.value} onChange={this.handleChange} onKeyPress={this.handleKeyPressed}/>
                 <button className={s["send-btn"]} onClick={this.handleSubmit}>Send</button>
             </div>
         );
@@ -45,13 +52,13 @@ const mapStateToProps = (state) => {
 
 const mapDispatchToProps = (dispatch) => {
     return {
-        fetchDrivers: () => {
-            dispatch(getDriversData())
+        sendMessage: (message, toDriverId) => {
+            dispatch(sendMessage(message, toDriverId))
         }
     };
 };
 
 export default connect(
-    null,
-    null,
+    mapStateToProps,
+    mapDispatchToProps,
 )(MessageInput);

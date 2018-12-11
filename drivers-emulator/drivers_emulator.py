@@ -58,9 +58,9 @@ class Scheduler(object):
         :return:
         """
         if self.connected:
-            self.time = (datetime.datetime.combine(datetime.date(1, 1, 1), self.time) + datetime.timedelta(
-                minutes=5)).time()
-            # self.time = datetime.datetime.now().time()
+            # self.time = (datetime.datetime.combine(datetime.date(1, 1, 1), self.time) + datetime.timedelta(
+            #     minutes=5)).time()
+            self.time = datetime.datetime.now().time()
             for driver_id in self.drivers:
                 await self.drivers[driver_id].check(self.time)
         else:

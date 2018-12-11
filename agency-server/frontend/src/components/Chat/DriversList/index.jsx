@@ -21,7 +21,6 @@ class DriversList extends React.Component {
             <div className={s["drivers-list-container"]}>
                 {
                     this.props.drivers.map((driver) => {
-                        console.log(driver);
                         return <DriverRow clicked={this.onClick} driverName={driver.name}
                                           // lastMessage={driver.messages.length > 0 ? driver.messages[driver.messages.length - 1].body : "No mesages yet"}
                                           lastMessage={"Click for dialog"}

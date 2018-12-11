@@ -9,7 +9,7 @@ from db_controller import MessageModel, json_serial
 
 AGENCY_EXCHANGE_NAME = "agency"
 DRIVERS_EXCHANGE_NAME = "drivers"
-MESSAGE_INTENSITY = 0.05  # param to set drivers random message frequency
+MESSAGE_INTENSITY = 0.1  # param to set drivers random message frequency
 
 
 class State(Enum):

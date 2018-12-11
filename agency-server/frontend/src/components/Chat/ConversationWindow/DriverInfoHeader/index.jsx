@@ -28,11 +28,11 @@ class DriverInfoHeader extends React.Component {
         let rf3 = new Date("2000-01-01T" + this.props.driverInfo.third_rest_stop);
         let currentTime = new Date();
         currentTime.setFullYear(2000, 0, 1);
-        if (ws < currentTime < wf) {
-            if (ls < currentTime < lf) return false;
-            if (rs1 < currentTime < rf1) return false;
-            if (rs2 < currentTime < rf2) return false;
-            if (rs3 < currentTime < rf3) return false;
+        if ((ws < currentTime) && (currentTime < wf)) {
+            if ((ls < currentTime) && (currentTime < lf)) return false;
+            if ((rs1 < currentTime) && (currentTime < rf1)) return false;
+            if ((rs2 < currentTime) && (currentTime < rf2)) return false;
+            if ((rs3 < currentTime) && (currentTime < rf3)) return false;
             return true;
         }
         return false;

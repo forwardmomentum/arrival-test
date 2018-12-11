@@ -1,4 +1,5 @@
 import {getDriversList, getLastMessages, getDriverWithHistoryShort, getMessageHistory} from "../api";
+import { WEBSOCKET_CONNECT, WEBSOCKET_SEND } from '@giantmachines/redux-websocket'
 
 export function getDriversData() {
     return (dispatch) => {
@@ -20,6 +21,12 @@ export function getDriversData() {
             })
             .then(res => {
                 console.log("[LAST MESSAGES]", res);
+                dispatch({
+                    type: WEBSOCKET_CONNECT,
+                    payload: {
+                        url: 'ws://localhost:9001/ws'
+                    }
+                })
             })
             .catch(err => {
                 console.error(`[ERROR] ${err}`);
@@ -65,5 +72,27 @@ export function loadAllHistory(driverId) {
                 })
             })
 
+    };
+}
+
+export function sendMessage(message, toDriverId) {
+    return (dispatch) => {
+        dispatch({
+            type: WEBSOCKET_SEND,
+            payload: {
+                to_id: toDriverId,
+                body: message
+            }
+        })
+    };
+}
+
+
+export function stopBlinking(driverId) {
+    return (dispatch) => {
+        dispatch({
+            type: "STOP_BLINKING",
+            driverId: driverId
+        })
     };
 }

@@ -37,6 +37,7 @@
     "webpack-svgstore-plugin": "^4.0.3"
   },
   "dependencies": {
+    "@giantmachines/redux-websocket": "^0.2.0",
     "axios": "^0.18.0",
     "axios-mock-adapter": "^1.8.1",
     "cleave.js": "^1.4.4",

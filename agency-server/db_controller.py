@@ -224,7 +224,8 @@ async def read_driver_with_short_history(conn, driver_id):
 
 async def read_messages_history(conn, driver_id, short=False):
     query = sa.select([messages_tbl]).where(
-        or_(messages_tbl.c.from_id == driver_id, messages_tbl.c.to_id == driver_id))
+        or_(messages_tbl.c.from_id == driver_id, messages_tbl.c.to_id == driver_id)).order_by(
+        messages_tbl.c.sended_at.desc())
     if short:
         query = query.limit(10)
     result = {'driver_id': driver_id, 'history': []}
@@ -237,7 +238,7 @@ async def read_messages_history(conn, driver_id, short=False):
 
 
 async def read_last_messages(conn):
-    query = sa.select([messages_tbl]).limit(100)
+    query = sa.select([messages_tbl]).limit(100).order_by(messages_tbl.c.sended_at)
     result = []
     async for row in conn.execute(query):
         result.append(MessageModel(message_id=row[0], body=row[1], received=row[2], sended_at=row[3],

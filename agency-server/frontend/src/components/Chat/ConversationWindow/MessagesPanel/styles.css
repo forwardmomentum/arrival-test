@@ -1,11 +1,21 @@
 .message-panel {
   text-align: end;
   overflow: auto;
-  height: 300px;
+  height: 400px;
 }
 
 .message {
   margin-top: 35px;
+  word-wrap: break-word;
+
+  /*margin-left: 40px;*/
+  background-color: #eff8ff;
+  /*width: 50%;*/
+  /*text-align: end;*/
+  padding-right: 10px;
+  margin-left: 100px;
+  padding-top: 7px;
+  padding-bottom: 7px;
 }
 
 .message-time {
@@ -18,4 +28,19 @@
   position: relative;
   left: 87%;
   font-size: 14px;
+  margin-bottom: 12px;
+}
+
+.message-out {
+  text-align: left;
+  word-wrap: break-word;
+  margin-left: 40px;
+  background-color: #e9ffe7;
+  width: 50%;
+  padding-left: 10px;
+  padding-top: 7px;
+  padding-bottom: 7px;
+}
+.icon {
+  margin-left: 10px;
 }

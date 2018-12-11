@@ -25,11 +25,11 @@ services: # https://github.com/micahhausler/rabbitmq-compose
     environment:
       POSTGRES_DB: agency
 
-  adminer:
-    image: adminer
-    restart: always
-    ports:
-      - 8080:8080
+#  adminer:
+#    image: adminer
+#    restart: always
+#    ports:
+#      - 8080:8080
 
 
 #postgres:

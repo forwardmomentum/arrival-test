@@ -74,6 +74,10 @@ class MessageService(object):
                 routing_key=routing_key,
                 message=aio_pika.message.Message(
                     json.dumps(message_model.to_dict(), default=db_controller.json_serial).encode("utf-8")))
+        if 'agency' in self.websockets:  # notify front that message was saved, todo fix hardcode
+            self.websockets['agency'].write_message(
+                json.dumps(message_model.to_dict(),
+                           default=db_controller.json_serial))
 
     async def on_message(self, queue_message):
         message_dict = json.loads(queue_message.body)
